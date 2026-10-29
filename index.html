@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastProposals — Генератор КП</title>
+    <!-- Подключаем Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased pb-32 transition-colors duration-300">
+
+    <!-- Верхняя панель управления -->
+    <header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex justify-between items-center shadow-sm">
+        <div class="font-black text-indigo-600 dark:text-indigo-400 text-base tracking-wide">⚡ FastProposals</div>
+        <div class="flex items-center gap-2">
+            <select id="currencySelect" onchange="updatePreview()" class="px-2 py-1 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg outline-none border border-slate-200 dark:border-slate-700">
+                <option value="TMT">TMT</option>
+                <option value="USD">USD</option>
+            </select>
+            <button onclick="toggleLang()" id="langBtn" class="px-2.5 py-1 text-xs font-bold bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 rounded-lg border border-indigo-100 dark:border-slate-700">Türkmençe</button>
+            <button onclick="toggleTheme()" id="themeBtn" class="p-1.5 text-xs bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">🌙</button>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto p-4 space-y-5">
+        
+        <!-- Заголовок / Оффер -->
+        <section class="text-center space-y-1.5 pt-1">
+            <h1 id="t-heroTitle" class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                Хватит тратить часы на ручное составление КП!
+            </h1>
+            <p id="t-heroSub" class="text-xs text-slate-500 dark:text-slate-400">
+                Создайте профессиональное коммерческое предложение за 1 минуту прямо с телефона.
+            </p>
+        </section>
+
+        <!-- Карточка формы -->
+        <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-3.5">
+            <h2 id="t-formTitle" class="text-sm font-bold text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-2">📝 Данные предложения</h2>
+            
+            <div class="space-y-2.5">
+                <div>
+                    <label id="t-lComp" class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Ваша компания</label>
+                    <input type="text" id="companyName" value="«Rowaç Alada» HJM" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" oninput="saveData()">
+                </div>
+                <div>
+                    <label id="t-lContact" class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Ваш контакт / Телефон</label>
+                    <input type="text" id="authorContact" value="Yusup, +993 63 77-81-88" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" oninput="saveData()">
+                </div>
+                <div>
+                    <label id="t-lClient" class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Клиент (Имя / Компания)</label>
+                    <input type="text" id="clientName" value="HK «Bäsdeş»" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" oninput="saveData()">
+                </div>
+                <div>
+                    <label id="t-lPropTitle" class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Заголовок КП</label>
+                    <input type="text" id="proposalTitle" value="Söwda ulgamyny awtomatlaşdyrmak" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" oninput="saveData()">
+                </div>
+            </div>
+
+            <!-- Услуги и рекомендуемая цена -->
+            <div class="pt-1">
+                <div class="flex justify-between items-center mb-1.5">
+                    <label id="t-lServices" class="text-[11px] font-bold text-slate-400 uppercase">Услуги и цена (TMT)</label>
+                    <button onclick="addItem()" id="t-btnAdd" class="text-xs bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-bold px-2.5 py-1 rounded-lg border border-indigo-100 dark:border-indigo-900">+ Добавить</button>
+                </div>
+                <div id="itemsContainer" class="space-y-2">
+                    <div class="flex gap-2 item-row items-center">
+                        <input type="text" value="IT-audit we ulgamy oturtmak" class="flex-grow px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm desc text-slate-800 dark:text-slate-100" oninput="updatePreview()">
+                        <input type="number" value="2500" class="w-24 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm price text-slate-800 dark:text-slate-100" oninput="updatePreview()">
+                        <button onclick="this.parentElement.remove(); updatePreview();" class="text-red-400 hover:text-red-600 p-2 font-bold">✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label id="t-lTerms" class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Условия и сроки</label>
+                <textarea id="proposalTerms" rows="2" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100" oninput="saveData()">Ýerine ýetiriş möhleti: 7 iş güni. Töleg 50% öňünden.</textarea>
+            </div>
+
+            <button onclick="downloadPDF()" id="t-btnDownload" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md shadow-indigo-200 dark:shadow-none text-sm">
+                📥 Скачать КП в PDF
+            </button>
+        </div>
+
+        <!-- Карточка предпросмотра -->
+        <div class="space-y-2">
+            <div id="t-prevLabel" class="text-[11px] uppercase tracking-wider text-slate-400 font-bold px-1">Предпросмотр документа</div>
+            <div id="pdfContent" class="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 space-y-3.5 text-xs">
+                <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div>
+                        <h3 id="previewCompany" class="font-bold text-indigo-600 dark:text-indigo-400 text-sm">«Rowaç Alada» HJM</h3>
+                        <p id="previewAuthor" class="text-[11px] text-slate-400 mt-0.5">Yusup, +993 63 77-81-88</p>
+                    </div>
+                    <div class="text-right">
+                        <span id="t-badge" class="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">КП</span>
+                        <p id="previewDate" class="text-[10px] text-slate-400 mt-1">29.10.2026</p>
+                    </div>
+                </div>
+
+                <div>
+                    <p id="t-to" class="text-[10px] text-slate-400 uppercase font-bold">Кому:</p>
+                    <h4 id="previewClient" class="font-semibold text-slate-800 dark:text-slate-100 text-sm">HK «Bäsdeş»</h4>
+                </div>
+
+                <div>
+                    <h2 id="previewTitle" class="font-bold text-slate-900 dark:text-white text-sm">Söwda ulgamyny awtomatlaşdyrmak</h2>
+                </div>
+
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase text-[10px]">
+                            <th id="t-th1" class="py-1.5">Услуга</th>
+                            <th id="t-th2" class="py-1.5 text-right">Сумма</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewItemsTable" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                </table>
+
+                <div class="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <div class="text-right">
+                        <span id="t-tot" class="text-[11px] text-slate-400">Итого:</span>
+                        <div id="previewTotal" class="text-lg font-extrabold text-indigo-600 dark:text-indigo-400">2 500 TMT</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 text-[11px]">
+                    <p id="t-ter" class="font-bold text-slate-400 uppercase mb-0.5 text-[10px]">Условия:</p>
+                    <p id="previewTermsText" class="text-slate-600 dark:text-slate-300">Ýerine ýetiriş möhleti: 7 iş güni.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Фиксированные кнопки связи с твоим Telegram (@Yusupmur) и Imo (+99363778188) -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-3 flex gap-2 justify-center z-50">
+        <a href="https://t.me/Yusupmur" target="_blank" class="flex-1 max-w-[200px] bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 rounded-xl text-center text-xs shadow-md transition flex items-center justify-center gap-1.5">
+            ✈️ Telegram
+        </a>
+        <a href="imo:chat?phone=99363778188" class="flex-1 max-w-[200px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-center text-xs shadow-md transition flex items-center justify-center gap-1.5">
+            💬 Imo
+        </a>
+    </div>
+
+    <script>
+        let currentLang = 'ru';
+        let currentTheme = 'light';
+
+        const translations = {
+            ru: {
+                heroTitle: "Хватит тратить часы на ручное составление КП!",
+                heroSub: "Создайте профессиональное коммерческое предложение за 1 минуту прямо с телефона.",
+                formTitle: "📝 Данные предложения",
+                lComp: "Ваша компания",
+                lContact: "Ваш контакт / Телефон",
+                lClient: "Клиент (Имя / Компания)",
+                lPropTitle: "Заголовок КП",
+                lServices: "Услуги и цена (TMT)",
+                btnAdd: "+ Добавить",
+                lTerms: "Условия и сроки",
+                btnDownload: "📥 Скачать КП в PDF",
+                prevLabel: "Предпросмотр документа",
+                badge: "КП",
+                to: "Кому:",
+                th1: "Услуга",
+                th2: "Сумма",
+                tot: "Итого:",
+                ter: "Условия:"
+            },
+            tm: {
+                heroTitle: "Täjirçilik tekliplerini düzmäge wagt ýitirmäň!",
+                heroSub: "Telefon arkaly 1 minudyň içinde hünär derejesindäki täjirçilik teklibini dörediň.",
+                formTitle: "📝 Teklif maglumatlary",
+                lComp: "Siziň kompaniýaňyz",
+                lContact: "Habarlaşmak üçin belgi",
+                lClient: "Müşderi (Ady / Kompaniýa)",
+                lPropTitle: "Teklibiň ady",
+                lServices: "Hyzmatlar we baha (TMT)",
+                btnAdd: "+ Goşmak",
+                lTerms: "Möhletler we şertler",
+                btnDownload: "📥 PDF görnüşinde ýükläp almak",
+                prevLabel: "Resminamanyň öňünden görülişi",
+                badge: "TT",
+                to: "Kime:",
+                th1: "Hyzmat",
+                th2: "Jemi",
+                tot: "Jemi:",
+                ter: "Şertler:"
+            }
+        };
+
+        function toggleLang() {
+            currentLang = currentLang === 'ru' ? 'tm' : 'ru';
+            const t = translations[currentLang];
+            
+            document.getElementById('t-heroTitle').innerText = t.heroTitle;
+            document.getElementById('t-heroSub').innerText = t.heroSub;
+            document.getElementById('t-formTitle').innerText = t.formTitle;
+            document.getElementById('t-lComp').innerText = t.lComp;
+            document.getElementById('t-lContact').innerText = t.lContact;
+            document.getElementById('t-lClient').innerText = t.lClient;
+            document.getElementById('t-lPropTitle').innerText = t.lPropTitle;
+            document.getElementById('t-lServices').innerText = t.lServices;
+            document.getElementById('t-btnAdd').innerText = t.btnAdd;
+            document.getElementById('t-lTerms').innerText = t.lTerms;
+            document.getElementById('t-btnDownload').innerText = t.btnDownload;
+            document.getElementById('t-prevLabel').innerText = t.prevLabel;
+            document.getElementById('t-badge').innerText = t.badge;
+            document.getElementById('t-to').innerText = t.to;
+            document.getElementById('t-th1').innerText = t.th1;
+            document.getElementById('t-th2').innerText = t.th2;
+            document.getElementById('t-tot').innerText = t.tot;
+            document.getElementById('t-ter').innerText = t.ter;
+            document.getElementById('langBtn').innerText = currentLang === 'ru' ? 'Türkmençe' : 'Русский';
+            
+            updatePreview();
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            const root = document.getElementById('htmlRoot');
+            const themeBtn = document.getElementById('themeBtn');
+
+            if (currentTheme === 'dark') {
+                root.classList.add('dark');
+                themeBtn.innerText = '☀️';
+            } else {
+                root.classList.remove('dark');
+                themeBtn.innerText = '🌙';
+            }
+        }
+
+        function saveData() {
+            const data = {
+                company: document.getElementById('companyName').value,
+                contact: document.getElementById('authorContact').value,
+                client: document.getElementById('clientName').value,
+                title: document.getElementById('proposalTitle').value,
+                terms: document.getElementById('proposalTerms').value
+            };
+            localStorage.setItem('fp_mobile_data', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('fp_mobile_data');
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('companyName').value = data.company || '';
+                document.getElementById('authorContact').value = data.contact || '';
+                document.getElementById('clientName').value = data.client || '';
+                document.getElementById('proposalTitle').value = data.title || '';
+                document.getElementById('proposalTerms').value = data.terms || '';
+            }
+        }
+
+        function updatePreview() {
+            document.getElementById('previewCompany').innerText = document.getElementById('companyName').value;
+            document.getElementById('previewAuthor').innerText = document.getElementById('authorContact').value;
+            document.getElementById('previewClient').innerText = document.getElementById('clientName').value;
+            document.getElementById('previewTitle').innerText = document.getElementById('proposalTitle').value;
+            document.getElementById('previewTermsText').innerText = document.getElementById('proposalTerms').value;
+
+            const currency = document.getElementById('currencySelect').value;
+            document.getElementById('previewDate').innerText = new Date().toLocaleDateString('ru-RU');
+
+            const rows = document.querySelectorAll('.item-row');
+            const tableBody = document.getElementById('previewItemsTable');
+            tableBody.innerHTML = '';
+            let total = 0;
+
+            rows.forEach(row => {
+                const desc = row.querySelector('.desc').value || 'Hyzmat';
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                total += price;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2 text-slate-700 dark:text-slate-300">${desc}</td>
+                    <td class="py-2 text-right font-medium text-slate-900 dark:text-white">${price.toLocaleString('ru-RU')} ${currency}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            document.getElementById('previewTotal').innerText = total.toLocaleString('ru-RU') + ' ' + currency;
+        }
+
+        function addItem() {
+            const container = document.getElementById('itemsContainer');
+            const div = document.createElement('div');
+            div.className = 'flex gap-2 item-row items-center';
+            div.innerHTML = `
+                <input type="text" placeholder="Hyzmat ady" class="flex-grow px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm desc text-slate-800 dark:text-slate-100" oninput="updatePreview()">
+                <input type="number" placeholder="Baha" value="0" class="w-24 px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm price text-slate-800 dark:text-slate-100" oninput="updatePreview()">
+                <button onclick="this.parentElement.remove(); updatePreview();" class="text-red-400 hover:text-red-600 p-2 font-bold">✕</button>
+            `;
+            container.appendChild(div);
+            updatePreview();
+        }
+
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', updatePreview);
+        });
+
+        function downloadPDF() {
+            const element = document.getElementById('pdfContent');
+            const opt = {
+                margin:       5,
+                filename:     'Commercial_Proposal.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
+
+        loadData();
+        updatePreview();
+    </script>
+</body>
+</html>
